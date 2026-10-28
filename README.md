@@ -1,3 +1,4 @@
+ HEAD
 # Delhi NCR Air Pollution–Weather Coupled Forecasting System (AeroCast)
 
 An academic research prototype and full-stack operational web application that predicts **PM2.5 particulate matter concentrations for the next 72 hours** across **10 monitoring stations in Delhi NCR**, tightly coupled with surface meteorology and boundary layer dynamics.
@@ -189,3 +190,6 @@ npm run build
 
 ## 📄 License
 Academic & Research Prototype — Licensed under the MIT License.
+
+# Aerocast-mini
+ 25c391d14f3f62850a0239449b0ab9d067cc8bf6
