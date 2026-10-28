@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Station {
+  id              String   @id @default(cuid())
+  name            String
+  city            String   @default("Delhi NCR")
+  latitude        Float
+  longitude       Float
+  openaqId        String?  @unique
+  openaqSensorIds Json?    // array of sensor IDs per pollutant
+  source          String   @default("OpenAQ")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pollutionObservations PollutionObservation[]
+  weatherObservations   WeatherObservation[]
+  forecasts             Forecast[]
+
+  @@index([latitude, longitude])
+}
+
+model PollutionObservation {
+  id         String   @id @default(cuid())
+  stationId  String
+  timestamp  DateTime
+  pollutant  String   // pm25, pm10, o3, no2, so2, co
+  value      Float
+  unit       String   @default("µg/m³")
+  source     String   @default("OpenAQ")
+  fetchedAt  DateTime @default(now())
+
+  station Station @relation(fields: [stationId], references: [id])
+
+  @@unique([stationId, timestamp, pollutant])
+  @@index([stationId, timestamp])
+  @@index([pollutant, timestamp])
+}
+
+model WeatherObservation {
+  id                  String   @id @default(cuid())
+  stationId           String?
+  latitude            Float
+  longitude           Float
+  timestamp           DateTime
+  temperature         Float?   // °C
+  humidity            Float?   // %
+  windSpeed           Float?   // km/h
+  windDirection       Float?   // degrees
+  precipitation       Float?   // mm
+  pressure            Float?   // hPa
+  boundaryLayerHeight Float?   // metres
+  source              String   @default("Open-Meteo-ERA5")
+  fetchedAt           DateTime @default(now())
+
+  station Station? @relation(fields: [stationId], references: [id])
+
+  @@unique([latitude, longitude, timestamp])
+  @@index([timestamp])
+  @@index([stationId, timestamp])
+}
+
+model Forecast {
+  id             String   @id @default(cuid())
+  stationId      String
+  issuedAt       DateTime
+  forecastTime   DateTime
+  leadHours      Int
+  pollutant      String   @default("pm25")
+  predictedValue Float
+  unit           String   @default("µg/m³")
+  modelVersion   String
+  lowerBound     Float?
+  upperBound     Float?
+  dataQuality    String   @default("ok") // ok, degraded, unavailable
+  createdAt      DateTime @default(now())
+
+  station Station @relation(fields: [stationId], references: [id])
+
+  @@unique([stationId, issuedAt, forecastTime, pollutant, modelVersion])
+  @@index([stationId, issuedAt])
+  @@index([forecastTime])
+}
+
+model ModelEvaluation {
+  id             String   @id @default(cuid())
+  modelName      String
+  pollutant      String
+  trainingPeriod String   // e.g. "2023-01-01 to 2024-06-30"
+  testPeriod     String   // e.g. "2024-07-01 to 2024-09-30"
+  leadHours      Int      // 1, 6, 24, 48, 72
+  mae            Float
+  rmse           Float
+  r2             Float
+  createdAt      DateTime @default(now())
+
+  @@unique([modelName, pollutant, leadHours])
+}
+
+model DataRefreshLog {
+  id              String    @id @default(cuid())
+  source          String    // openaq, open-meteo-archive, open-meteo-forecast
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  status          String    // running, success, failed
+  recordsInserted Int       @default(0)
+  errorSummary    String?
+
+  @@index([source, startedAt])
+}

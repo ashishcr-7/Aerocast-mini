@@ -1,0 +1,2 @@
+2026-10-27 22:32:09 IST LOG:  redirecting log output to logging collector process
+2026-10-27 22:32:09 IST HINT:  Future log output will appear in directory "log".
